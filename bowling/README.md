@@ -36,6 +36,41 @@ Body tracking (Google MediaPipe Pose) runs entirely on the phone. No video leave
 1. Open the Play Store on the TV and install **TV Bro**, a free browser for Android TV.
 2. Connect the TV to the **same Wi-Fi** as the phone. Use 5 GHz if you have it.
 
+## How to play, step by step
+
+### Step 1: Start the server and open the camera page on the phone
+Run `bash ~/bowling/start.sh` in Termux. The camera page opens and shows the address to type on the TV. Tap **Start camera**.
+
+<img src="../docs/screenshots/07-phone-camera.png" width="260" alt="Phone camera page with the TV address and Start camera button">
+
+### Step 2: Open the game on the TV and press OK
+Go to the address in TV Bro. The title screen shows both ways to play. Press **OK** on the remote to start.
+
+![TV title screen](../docs/screenshots/01-tv-start.png)
+
+### Step 3: Aim and throw
+Step left or right to pick your spot, let your arm hang down until the stick figure turns green, then swing up fast.
+The ball speed shows in the bottom-right corner.
+
+![Ball rolling down the lane](../docs/screenshots/04-tv-rolling.png)
+
+### Step 4: Watch the pins fall
+The camera follows the ball down to the pins. Lean while you swing to hook it into the pocket.
+
+![Ball reaching the pins](../docs/screenshots/05-tv-pins.png)
+
+### Step 5: Check your score and bowl again
+The scoreboard at the top updates after every ball. A game is 10 frames with standard strike and spare scoring.
+When the game ends, raise both hands above your head for 1.5 s to start a new one.
+
+![Scoreboard after the first ball](../docs/screenshots/06-tv-score.png)
+
+### No camera stand? Use the phone as a controller
+Run `bash ~/bowling/start.sh controller` and hold the phone. In **Motion** mode, swing it like a ball. In **Swipe** mode,
+swipe up on the orange pad (curve the swipe for hook). The slider sets your starting spot.
+
+<img src="../docs/screenshots/08-phone-controller.png" width="260" alt="Phone controller in Swipe mode">
+
 ## Every time you play (camera mode)
 1. **Phone:** open Termux and run `bash ~/bowling/start.sh`.
    It prints the TV address, for example `http://192.168.1.23:3000/tv`, and opens the camera page in Chrome.

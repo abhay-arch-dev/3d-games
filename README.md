@@ -9,6 +9,10 @@ No controller or extra hardware is needed. The first game is **🎳 Motion Bowli
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Plan to get to the Play Store with a subscription model |
 | [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) | Open-source licences used |
 
+![Motion Bowling on the TV](docs/screenshots/05-tv-pins.png)
+
+See the [step-by-step guide with screenshots](bowling/README.md#how-to-play-step-by-step).
+
 ## Quick start (development)
 ```bash
 cd bowling
