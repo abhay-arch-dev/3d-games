@@ -1,0 +1,13 @@
+{
+  "name": "motion-bowling",
+  "version": "1.0.0",
+  "description": "3D bowling on Android TV, using a phone as the motion controller",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.1.1",
+    "three": "0.160.0"
+  }
+}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion Bowling</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0d1220; color: #eef2ff;
+    font: 16px/1.4 system-ui, -apple-system, Roboto, sans-serif; padding: 16px; box-sizing: border-box; }
+  main { max-width: 420px; width: 100%; }
+  h1 { margin: 0 0 6px; }
+  p { color: #8b95b5; }
+  a { display: block; text-decoration: none; color: inherit; background: #161d31; border: 1px solid #26304d;
+    border-radius: 14px; padding: 16px; margin: 12px 0; }
+  a b { display: block; font-size: 18px; }
+  a span { color: #8b95b5; font-size: 14px; }
+  code { color: #ffb03a; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎳 Motion Bowling</h1>
+  <p>Pick what this device is:</p>
+  <a href="/camera"><b>📷 Camera mode</b><span>Phone on a stand facing you. Bowl with your body.</span></a>
+  <a href="/controller"><b>📱 Motion mode</b><span>Phone in your hand as the ball</span></a>
+  <a href="/tv"><b>📺 TV game</b><span>On the TV browser</span></a>
+  <p id="ips"></p>
+</main>
+<script>
+  fetch('/api/info').then(r => r.json()).then(i => {
+    if (i.ips.length) document.getElementById('ips').innerHTML =
+      'TV address: ' + i.ips.map(ip => `<code>http://${ip}:${i.port}/tv</code>`).join(' or ');
+  }).catch(() => {});
+</script>
+</body>
+</html>

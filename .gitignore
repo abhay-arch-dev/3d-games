@@ -1,0 +1,23 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Dependencies (restore with: cd bowling && npm install)
+node_modules/
+
+# Build outputs
+bowling/android/build/
+*.apk
+*.aab
+*.zip
+
+# Signing keys: NEVER commit these. The Play upload key must be backed up somewhere safe.
+*.keystore
+*.jks
+keystore.properties
+
+# Local env / secrets
+.env
+.env.*
+*.idsig
