@@ -12,6 +12,10 @@ export interface RawSocket {
   write(data: Uint8Array | string): unknown;
   destroy(): unknown;
   setNoDelay?(on?: boolean): unknown;
+  /** Resolves once the data has been handed to the OS. Used for large HTTP bodies. */
+  writeAsync?(data: Uint8Array): Promise<void>;
+  /** Closes after pending writes are flushed. */
+  end?(): unknown;
   on(event: 'data', cb: (d: Uint8Array | string) => void): unknown;
   on(event: 'close' | 'error', cb: (...args: unknown[]) => void): unknown;
 }
@@ -148,10 +152,19 @@ export class GameServer {
       `HTTP/1.1 ${status} ${text}\r\nContent-Type: ${type}\r\nContent-Length: ${body.length}\r\n` +
       'Cache-Control: no-cache\r\nConnection: close\r\n\r\n',
     );
-    socket.write(body);
-    // Close once the data is flushed; destroying right away can cut large files short on some stacks.
-    const s = socket as RawSocket & { end?: () => void };
-    if (s.end) s.end(); else setTimeout(() => socket.destroy(), 1000);
+    void this.writeBody(socket, body);
+  }
+
+  /** Writes a body in chunks, waiting for each to flush; some socket stacks drop data past their buffer otherwise. */
+  private async writeBody(socket: RawSocket, body: Uint8Array): Promise<void> {
+    const CHUNK = 64 * 1024;
+    for (let off = 0; off < body.length; off += CHUNK) {
+      const part = body.subarray(off, off + CHUNK);
+      if (socket.writeAsync) {
+        try { await socket.writeAsync(part); } catch { socket.destroy(); return; }
+      } else socket.write(part);
+    }
+    if (socket.end) socket.end(); else setTimeout(() => socket.destroy(), 1000);
   }
 
   // ---- WebSocket (RFC 6455): text frames, ping/pong, close ---------------------------

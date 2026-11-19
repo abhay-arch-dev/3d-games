@@ -41,6 +41,9 @@ export function startServer(): GameServer {
     // react-native-tcp-socket wants Buffers or strings.
     const raw: RawSocket & { end: () => void } = {
       write: (d) => socket.write(typeof d === 'string' ? d : Buffer.from(d.buffer, d.byteOffset, d.byteLength)),
+      writeAsync: (d) => new Promise<void>((resolve, reject) => {
+        socket.write(Buffer.from(d.buffer, d.byteOffset, d.byteLength), undefined, (err) => (err ? reject(err) : resolve()));
+      }),
       destroy: () => socket.destroy(),
       end: () => socket.end(),
       setNoDelay: (on) => socket.setNoDelay(on),
