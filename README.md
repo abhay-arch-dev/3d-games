@@ -5,6 +5,7 @@ No controller or extra hardware is needed. The first game is **🎳 Motion Bowli
 
 | Folder | What it is |
 |---|---|
+| [`bowling-rn/`](bowling-rn/) | **React Native app (TypeScript).** The phone app hosts the server; the game, tracking and controller are TypeScript web pages shown in WebViews and on the TV |
 | [`bowling/`](bowling/) | Motion Bowling: 3D game (three.js), body tracking (MediaPipe), Node dev server, Android app |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Plan to get to the Play Store with a subscription model |
 | [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) | Open-source licences used |

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion Bowling</title>
+<style>
+  :root { --text: #f3f5ff; --dim: #a3abc9; --accent: #ff7a2f; --accent2: #ffb03a; --panel: rgba(10,14,26,.78); --line: rgba(255,255,255,.12); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #070a12; color: var(--text);
+    font: 16px/1.3 system-ui, -apple-system, Roboto, sans-serif; cursor: none; }
+  #stage, #stage canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* Scoreboard */
+  #board { position: fixed; top: 3vh; left: 50%; transform: translateX(-50%); display: flex; gap: 0;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; backdrop-filter: blur(6px); }
+  .fr { width: 5.2vw; min-width: 54px; border-right: 1px solid var(--line); text-align: center; }
+  .fr:last-child { border-right: 0; width: 7vw; min-width: 72px; }
+  .fr .n { font-size: 1.1vw; color: var(--dim); padding: .3vw 0; border-bottom: 1px solid var(--line); min-height: 1.6vw; }
+  .fr .m { display: flex; justify-content: flex-end; height: 2.1vw; min-height: 22px; }
+  .fr .m span { width: 1.9vw; min-width: 20px; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    font-size: 1.3vw; font-weight: 700; display: grid; place-items: center; }
+  .fr .m span.x { color: var(--accent2); }
+  .fr .t { font-size: 1.6vw; font-weight: 700; height: 2.6vw; min-height: 26px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+  .fr.cur { background: rgba(255,122,47,.18); }
+  .fr.cur .n { color: var(--accent2); }
+
+  /* Center message */
+  #msg { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%) scale(.6); opacity: 0;
+    font-size: 8vw; font-weight: 900; letter-spacing: .04em; white-space: nowrap; pointer-events: none;
+    background: linear-gradient(180deg, #fff 10%, var(--accent2) 55%, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 .4vw 1.2vw rgba(0,0,0,.6)); transition: opacity .25s, transform .35s cubic-bezier(.2,1.6,.4,1); }
+  #msg.small { font-size: 4.5vw; }
+  #msg.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+  /* Bottom bar */
+  #status { position: fixed; left: 2.5vw; bottom: 3vh; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: .8vw 1.2vw; font-size: 1.25vw; display: flex; align-items: center; gap: .7vw; }
+  #status i { width: .8vw; height: .8vw; min-width: 8px; min-height: 8px; border-radius: 50%; background: #ff5d6c; display: inline-block; }
+  #status.on i { background: #3ddc97; }
+  #info { position: fixed; right: 2.5vw; bottom: 3vh; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: .8vw 1.2vw; font-size: 1.25vw; text-align: right; min-width: 12vw; }
+  #info b { font-size: 2vw; display: block; font-variant-numeric: tabular-nums; }
+  #info small { color: var(--dim); }
+
+  /* Start / connect overlay */
+  #overlay { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(circle at 50% 40%, rgba(30,20,10,.55), rgba(5,7,14,.92)); }
+  #overlay.hide { display: none; }
+  .card { text-align: center; max-width: 70vw; }
+  .card h1 { font-size: 5.5vw; margin: 0 0 1vw; letter-spacing: .02em;
+    background: linear-gradient(180deg, #fff, var(--accent2) 60%, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .card p { font-size: 1.7vw; color: var(--dim); margin: .6vw 0; }
+  .card code { color: var(--text); background: rgba(255,255,255,.08); padding: .2vw .6vw; border-radius: 6px; }
+  .card button { margin-top: 2.2vw; font: inherit; font-size: 2vw; font-weight: 800; color: #2a1206; padding: 1vw 3vw;
+    border: 0; border-radius: 999px; background: linear-gradient(180deg, var(--accent2), var(--accent)); cursor: pointer;
+    box-shadow: 0 0 0 .4vw rgba(255,176,58,.25); }
+  .card button:focus { outline: none; box-shadow: 0 0 0 .5vw #fff; }
+  .steps { display: flex; gap: 2vw; justify-content: center; margin-top: 2vw; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.2vw 1.6vw; width: 20vw; font-size: 1.3vw; color: var(--dim); }
+  .step b { display: block; color: var(--text); font-size: 1.5vw; margin-bottom: .4vw; }
+  #err { color: #ffb3bb; }
+
+  /* Camera-mode body view */
+  #posebox { position: fixed; right: 2.5vw; bottom: calc(3vh + 7.5vw); width: 12vw; min-width: 120px; aspect-ratio: 3 / 4;
+    background: var(--panel); border: 2px solid var(--line); border-radius: 14px; overflow: hidden; display: none; }
+  #posebox.on { display: block; }
+  #posebox.ready { border-color: #3ddc97; box-shadow: 0 0 1.5vw rgba(61,220,151,.45); }
+  #posebox canvas { width: 100%; height: 100%; display: block; }
+  #posebox .lbl { position: absolute; left: 0; right: 0; bottom: .4vw; text-align: center; font-size: 1vw; color: var(--dim); }
+  #hint { position: fixed; left: 50%; bottom: 3vh; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: .7vw 1.6vw; font-size: 1.25vw; color: var(--dim); display: none; white-space: nowrap; }
+  #hint b { color: var(--text); }
+  #hint.on { display: block; }
+</style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="board"></div>
+  <div id="msg"></div>
+  <div id="status"><i></i><span id="statusTxt">Waiting for phone…</span></div>
+  <div id="posebox"><canvas id="posecv" width="240" height="320"></canvas><div class="lbl" id="poseLbl">Camera</div></div>
+  <div id="hint"><b>Step</b> to aim · <b>Swing your arm up</b> to throw · <b>Lean</b> to hook</div>
+  <div id="info"><small>Ball speed</small><b id="kmh">–</b><small id="remote">Remote: ◀ ▶ move · OK throw</small></div>
+
+  <div id="overlay">
+    <div class="card">
+      <h1>Motion Bowling</h1>
+      <p>Bowl with your body. No controller needed.</p>
+      <div class="steps">
+        <div class="step"><b>📷 Camera mode</b>Phone on a stand facing you.<br>Open <code>localhost:3000/camera</code></div>
+        <div class="step"><b>🙋 Play</b>Step left/right to aim, lower your arm, then swing it up fast to throw</div>
+        <div class="step"><b>📱 Motion mode</b>Phone in hand.<br>Open <code>localhost:3000/controller</code></div>
+      </div>
+      <button id="startBtn" autofocus>Press OK to start</button>
+      <p id="err"></p>
+    </div>
+  </div>
+
+<script src="game.js"></script>
+</body>
+</html>
