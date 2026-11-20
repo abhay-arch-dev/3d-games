@@ -1,4 +1,6 @@
-# 🎳 Motion Bowling
+# 🎳 Motion Bowling (original prototype)
+
+> **This is the original browser-only prototype, run with Termux.** The current app, with all four games, 2-player Bowling and an installable APK, is in [`bowling-rn/`](../bowling-rn/). See the [main README](../README.md) for how to install and play.
 
 A 3D bowling game for the **OnePlus Android TV**, played with a **OnePlus 6**. Two ways to play:
 

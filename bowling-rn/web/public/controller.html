@@ -62,8 +62,8 @@
   body:not([data-game="bowling"]) #players { display: none; }
   body[data-game="runner"] .pos, body[data-game="dance"] .pos, body[data-game="hub"] .pos,
   body[data-game="runner"] .score, body[data-game="dance"] .score, body[data-game="hub"] .score,
-  body[data-game="runner"] #warn, body[data-game="dance"] #warn, body[data-game="hub"] #warn,
   body[data-game="runner"] #mode, body[data-game="dance"] #mode, body[data-game="hub"] #mode { display: none; }
+  body[data-game="runner"] #warn, body[data-game="dance"] #warn, body[data-game="hub"] #warn { display: none !important; }
   #toast { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%) scale(.9); opacity: 0;
     background: rgba(13,18,32,.92); border: 1px solid var(--line); padding: 16px 22px; border-radius: 16px;
     font-size: 26px; font-weight: 800; pointer-events: none; transition: opacity .2s, transform .2s; text-align: center; }
