@@ -1,3 +1,5 @@
+<img src="docs/icon/icon-512.png" width="96" align="right" alt="Motion Games icon">
+
 # 🎮 Motion Games
 
 Living-room games you play with your body. An Android phone tracks your movements, and the game plays on your TV.
