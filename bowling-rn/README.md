@@ -59,7 +59,16 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 The release build bundles the JavaScript, so it runs without a computer. `npm run android` builds a *debug* app instead, which needs Metro (`npm start`) running on your computer.
 
-> **Signing:** release builds are currently signed with the React Native template's shared `debug.keystore`. That's fine for sideloading on your own devices. Before publishing anywhere public, create your own keystore (see [docs/ROADMAP.md](../docs/ROADMAP.md)). Android only accepts updates signed with the same key, so switching keys later means users have to uninstall first.
+> **Signing:** release builds are signed with your own key when `~/.motiongames/keystore.properties` exists (or the file named by `MOTIONGAMES_KEYSTORE`):
+> ```properties
+> storeFile=/Users/you/.motiongames/motiongames-release.jks
+> storePassword=…
+> keyAlias=motiongames
+> keyPassword=…
+> ```
+> Otherwise they fall back to the shared `debug.keystore`. **Never commit the key, and back it up.** Android only accepts updates signed with the same key, so if the key is lost, everyone has to uninstall before they can install a new version.
+>
+> Create a key: `keytool -genkeypair -keystore ~/.motiongames/motiongames-release.jks -alias motiongames -keyalg RSA -keysize 4096 -validity 10000`
 
 ## iOS
 Camera, motion and local-network permission strings are already in `Info.plist`, and the app is landscape only. One manual step remains:

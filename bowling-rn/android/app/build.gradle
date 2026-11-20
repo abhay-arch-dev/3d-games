@@ -93,15 +93,27 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // Your own release key. Its properties file lives outside the repo (never commit it):
+        // ~/.motiongames/keystore.properties, or set MOTIONGAMES_KEYSTORE to another path.
+        def ksFile = file(System.getenv("MOTIONGAMES_KEYSTORE") ?: "${System.getProperty('user.home')}/.motiongames/keystore.properties")
+        if (ksFile.exists()) {
+            def ks = new Properties()
+            ksFile.withInputStream { ks.load(it) }
+            release {
+                storeFile file(ks['storeFile'])
+                storePassword ks['storePassword']
+                keyAlias ks['keyAlias']
+                keyPassword ks['keyPassword']
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Signed with your own key when ~/.motiongames/keystore.properties exists, else the shared debug key.
+            signingConfig signingConfigs.findByName('release') ?: signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
