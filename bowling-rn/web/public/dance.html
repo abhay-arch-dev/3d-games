@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dance</title>
+<link rel="stylesheet" href="tv.css">
+<style>
+  body { background: radial-gradient(circle at 50% 30%, #2b1240 0%, #0b0716 70%); }
+  #rate { position: fixed; left: 50%; top: 13vh; transform: translateX(-50%) scale(.7); opacity: 0; font-size: 4.5vw; font-weight: 900;
+    letter-spacing: .05em; transition: opacity .15s, transform .25s cubic-bezier(.2,1.6,.4,1); text-shadow: 0 .3vw 1vw rgba(0,0,0,.6); }
+  #rate.show { opacity: 1; transform: translateX(-50%) scale(1); }
+  #moveName { position: fixed; left: 50%; top: 3vh; transform: translateX(-50%); font-size: 2.2vw; font-weight: 800; padding: .6vw 1.8vw; }
+</style>
+</head>
+<body data-game="dance">
+  <canvas id="cv" class="full"></canvas>
+  <div class="panel" id="moveName">Get ready</div>
+  <div class="panel hud tr"><small>Score</small><b id="score">0</b><small id="combo">Combo 0</small></div>
+  <div id="rate"></div>
+  <div id="status" class="panel hud bl"><i></i><span id="statusTxt">Waiting for camera phone…</span></div>
+  <div id="msg"></div>
+  <div class="overlay" id="overlay"><div class="card">
+    <h1>💃 Dance</h1>
+    <p>Match the glowing pose when the timeline card reaches the line. The closer each limb points the same way, the higher the score.</p>
+    <p>Needs <b>Camera mode</b>: phone on a stand, whole body in view, about 2–3 m back.</p>
+    <p id="camState">Waiting for the camera phone…</p>
+    <button class="btn" id="startBtn">Press OK or raise both hands to start</button>
+  </div></div>
+  <div class="back">Back: all games</div>
+<script src="dance.js"></script>
+</body>
+</html>

@@ -43,6 +43,7 @@ const ROUTES: Record<string, string> = {
   '/': 'index.html', '/tv': 'tv.html', '/tv/': 'tv.html',
   '/controller': 'controller.html', '/controller/': 'controller.html', '/c': 'controller.html',
   '/camera': 'camera.html', '/camera/': 'camera.html',
+  '/bowling': 'bowling.html', '/paper': 'paper.html', '/runner': 'runner.html', '/dance': 'dance.html',
 };
 
 type ClientRole = 'tv' | 'controller';

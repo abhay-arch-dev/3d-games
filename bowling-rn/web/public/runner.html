@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track Runner</title>
+<link rel="stylesheet" href="tv.css">
+<style>
+  #moves { position: fixed; left: 50%; top: 3vh; transform: translateX(-50%); display: flex; gap: .6vw; padding: .5vw; }
+  #moves span { font-size: 1.2vw; padding: .4vw .9vw; border-radius: 8px; color: var(--dim); transition: background .1s, color .1s; }
+  #moves span.on { background: var(--accent2); color: #2a1206; font-weight: 800; }
+</style>
+</head>
+<body data-game="runner">
+  <div id="stage"></div>
+  <div class="panel hud tl"><small>Distance</small><b id="dist">0 m</b><small id="coins">🪙 0</small></div>
+  <div class="panel hud tr"><small>Best</small><b id="best">0</b><small id="speed">–</small></div>
+  <div class="panel" id="moves"><span id="mvL">◀ Left</span><span id="mvU">▲ Jump</span><span id="mvD">▼ Duck</span><span id="mvR">Right ▶</span></div>
+  <div id="status" class="panel hud bl"><i></i><span id="statusTxt">Waiting for phone…</span></div>
+  <div id="posebox" class="panel"><canvas id="posecv" width="220" height="293"></canvas></div>
+  <div id="msg"></div>
+  <div class="overlay" id="overlay"><div class="card">
+    <h1>🏃 Track Runner</h1>
+    <p>Run as far as you can. Grab coins. Don't hit anything.</p>
+    <p><b>Camera:</b> step left/right to change lane · hop to jump · crouch to duck</p>
+    <p><b>Phone:</b> swipe ◀ ▶ ▲ ▼ · <b>Remote:</b> arrow keys</p>
+    <p id="calib">Camera players: stand in the middle of the view, whole body visible.</p>
+    <button class="btn" id="startBtn">Press OK (or jump) to start</button>
+  </div></div>
+  <div class="back">Back: all games</div>
+<script src="runner.js"></script>
+</body>
+</html>

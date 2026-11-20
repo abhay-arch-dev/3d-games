@@ -46,6 +46,24 @@
     border-radius: 12px; padding: 12px; font: inherit; font-weight: 600; }
   #last { color: var(--dim); font-size: 13px; text-align: center; min-height: 18px; }
   #warn { display: none; background: #3a1a20; border: 1px solid #6b2a35; color: #ffc3ca; border-radius: 12px; padding: 10px 12px; font-size: 13px; }
+  /* Landscape: controls on the left, throw pad on the right. */
+  body { display: grid; grid-template-columns: minmax(240px, 42%) 1fr; grid-template-rows: auto auto auto auto 1fr auto;
+    grid-auto-flow: column; column-gap: 16px; row-gap: 8px; padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); }
+  body > .row, #warn, .score, .pos, #last, .foot { grid-column: 1; }
+  #pad { grid-column: 2; grid-row: 1 / -1; min-height: 0; }
+  .score, .pos { padding: 8px 12px; }
+  .foot { align-self: end; }
+  #pad .ring { width: min(170px, 42vh); height: min(170px, 42vh); }
+  #rotate { display: none; }
+  @media (orientation: portrait) {
+    #rotate { display: grid; position: fixed; inset: 0; z-index: 9; place-items: center; background: var(--bg); font-size: 20px; text-align: center; padding: 24px; }
+  }
+  /* Bowling-only controls are hidden in the other games. */
+  body:not([data-game="bowling"]) #players { display: none; }
+  body[data-game="runner"] .pos, body[data-game="dance"] .pos, body[data-game="hub"] .pos,
+  body[data-game="runner"] .score, body[data-game="dance"] .score, body[data-game="hub"] .score,
+  body[data-game="runner"] #warn, body[data-game="dance"] #warn, body[data-game="hub"] #warn,
+  body[data-game="runner"] #mode, body[data-game="dance"] #mode, body[data-game="hub"] #mode { display: none; }
   #toast { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%) scale(.9); opacity: 0;
     background: rgba(13,18,32,.92); border: 1px solid var(--line); padding: 16px 22px; border-radius: 16px;
     font-size: 26px; font-weight: 800; pointer-events: none; transition: opacity .2s, transform .2s; text-align: center; }
@@ -58,6 +76,7 @@
       <span><i class="dot" id="dServer"></i>Server</span>
       <span><i class="dot" id="dTv"></i>TV</span>
     </div>
+    <span id="gameName" class="status" style="color:var(--text);font-weight:700"></span>
     <div class="seg" id="mode">
       <button data-mode="motion" class="on">Motion</button>
       <button data-mode="swipe">Swipe</button>
@@ -85,9 +104,11 @@
 
   <div id="last"></div>
   <div class="foot">
+    <div class="seg" id="players"><button data-n="1">1P</button><button data-n="2">2P</button></div>
     <button id="newGame">New game</button>
   </div>
   <div id="toast"></div>
+  <div id="rotate">📱↻<br>Turn your phone sideways</div>
 
 <script src="controller.js"></script>
 </body>

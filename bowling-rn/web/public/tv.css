@@ -1,0 +1,37 @@
+/* Shared look for the TV pages (picker, Paper Toss, Track Runner, Dance). Sized in vw so it scales to any TV. */
+:root { --text: #f3f5ff; --dim: #a3abc9; --accent: #ff7a2f; --accent2: #ffb03a; --ok: #3ddc97; --bad: #ff5d6c;
+  --panel: rgba(10,14,26,.78); --line: rgba(255,255,255,.12); }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #070a12; color: var(--text);
+  font: 16px/1.3 system-ui, -apple-system, Roboto, sans-serif; cursor: none; }
+#stage, #stage canvas, canvas.full { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; backdrop-filter: blur(6px); }
+.hud { position: fixed; padding: .8vw 1.2vw; font-size: 1.25vw; }
+.hud b { font-size: 2.4vw; display: block; font-variant-numeric: tabular-nums; }
+.hud small { color: var(--dim); text-transform: uppercase; letter-spacing: .06em; font-size: .95vw; }
+.tl { left: 2.5vw; top: 3vh; } .tr { right: 2.5vw; top: 3vh; text-align: right; }
+.bl { left: 2.5vw; bottom: 3vh; } .br { right: 2.5vw; bottom: 3vh; text-align: right; }
+#status { display: flex; align-items: center; gap: .7vw; }
+#status i { width: .8vw; height: .8vw; min-width: 8px; min-height: 8px; border-radius: 50%; background: var(--bad); display: inline-block; }
+#status.on i { background: var(--ok); }
+#msg { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%) scale(.6); opacity: 0; z-index: 5;
+  font-size: 7vw; font-weight: 900; letter-spacing: .04em; white-space: nowrap; pointer-events: none; text-align: center;
+  background: linear-gradient(180deg, #fff 10%, var(--accent2) 55%, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 .4vw 1.2vw rgba(0,0,0,.6)); transition: opacity .25s, transform .35s cubic-bezier(.2,1.6,.4,1); }
+#msg.small { font-size: 4vw; }
+#msg.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.overlay { position: fixed; inset: 0; display: grid; place-items: center; z-index: 6;
+  background: radial-gradient(circle at 50% 40%, rgba(30,20,10,.55), rgba(5,7,14,.92)); }
+.overlay.hide { display: none; }
+.card { text-align: center; max-width: 76vw; }
+.card h1 { font-size: 5vw; margin: 0 0 1vw; background: linear-gradient(180deg, #fff, var(--accent2) 60%, var(--accent));
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.card p { font-size: 1.7vw; color: var(--dim); margin: .6vw 0; }
+.card p b { color: var(--text); }
+.btn { margin-top: 2vw; font: inherit; font-size: 2vw; font-weight: 800; color: #2a1206; padding: 1vw 3vw; border: 0; border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent2), var(--accent)); cursor: pointer; box-shadow: 0 0 0 .4vw rgba(255,176,58,.25); }
+.btn:focus { outline: none; box-shadow: 0 0 0 .5vw #fff; }
+.back { position: fixed; left: 50%; bottom: 3vh; transform: translateX(-50%); font-size: 1.1vw; color: var(--dim); padding: .5vw 1.2vw; border-radius: 999px; }
+#posebox { position: fixed; right: 2.5vw; bottom: calc(3vh + 7vw); width: 11vw; min-width: 110px; aspect-ratio: 3 / 4; overflow: hidden; display: none; border-width: 2px; }
+#posebox.on { display: block; }
+#posebox canvas { width: 100%; height: 100%; display: block; }

@@ -2,7 +2,7 @@
 import type { PoseLandmarker as PoseLandmarkerT } from '@mediapipe/tasks-vision';
 import { connect, $ } from './net';
 import { createTracker, LM, type Hand, type Landmark, type TrackResult } from './gestures';
-import type { ControllerToTv, ServerInfo, TvToController } from './protocol';
+import type { ControllerToTv, GameId, ServerInfo, TvToController } from './protocol';
 
 const video = $<HTMLVideoElement>('video');
 const canvas = $<HTMLCanvasElement>('overlay');
@@ -19,6 +19,14 @@ const requestWakeLock = async (): Promise<WakeLockLike> =>
   (navigator as Navigator & { wakeLock?: { request(t: 'screen'): Promise<WakeLockLike> } }).wakeLock?.request('screen');
 
 let tvCount = 0;
+let game: GameId = 'bowling';
+const HELP: Record<GameId, string> = {
+  bowling: '<b>Step left/right</b> to aim · <b>Lower your arm, then swing it up fast</b> to throw · <b>Lean</b> to hook · <b>Both hands up</b> for a new game',
+  paper: '<b>Step left/right</b> to aim · <b>Lower your arm, then swing it up</b> to toss · faster swing = further',
+  runner: '<b>Step left/right</b> to change lane · <b>Hop</b> to jump · <b>Crouch</b> to duck · <b>Both hands up</b> to restart',
+  dance: '<b>Copy the glowing pose</b> on the TV, on the beat · <b>Both hands up</b> to start the song',
+  hub: 'Pick a game on the TV with the remote, or go back in the app',
+};
 let canThrow = false;
 let facing: Facing = 'user';
 let landmarker: PoseLandmarkerT | null = null;
@@ -34,6 +42,11 @@ const tracker = createTracker({ hand: (localStorageGet('hand') as Hand | null) |
 const net = connect<TvToController, ControllerToTv>('controller', (msg) => {
   if (msg.type === 'peers') { tvCount = msg.tv; $('dTv').classList.toggle('on', tvCount > 0); }
   else if (msg.type === 'state') canThrow = !!msg.canThrow;
+  else if (msg.type === 'game') {
+    game = msg.game;
+    if (game === 'runner' || game === 'dance' || game === 'hub') canThrow = false;
+    $('help').innerHTML = HELP[game];
+  }
 }, (on) => $('dServer').classList.toggle('on', on));
 
 // ---- Settings -------------------------------------------------------------------
@@ -140,7 +153,7 @@ export function handlePose(lm: Landmark[] | undefined, t: number): TrackResult {
   if (r.newGame) net.send({ type: 'cmd', action: 'newgame', soft: true });
 
   // Stick figure for the TV (~15 per second). Mirrored so the TV acts like a mirror.
-  if (nowMs - lastPoseSent > 66) {
+  if (nowMs - lastPoseSent > (game === 'bowling' ? 66 : 33)) {
     lastPoseSent = nowMs;
     net.send({
       type: 'pose',
@@ -154,6 +167,9 @@ export function handlePose(lm: Landmark[] | undefined, t: number): TrackResult {
   if (nowMs > stateTimer) {
     if (tvCount === 0) setState('Open the game on the TV');
     else if (!r.visible) setState('Step into view: whole body');
+    else if (game === 'runner') setState('Step left/right · hop to jump · crouch to duck', 'ready');
+    else if (game === 'dance') setState('Copy the pose on the TV!', 'ready');
+    else if (game === 'hub') setState('Pick a game on the TV');
     else if (!canThrow) setState('Wait for the pins…');
     else if (r.ready) setState('Ready, swing!', 'ready');
     else setState(`Lower your ${tracker.hand} arm`);

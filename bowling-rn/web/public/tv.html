@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion Games</title>
+<link rel="stylesheet" href="tv.css">
+<style>
+  body { background: radial-gradient(circle at 50% 0%, #2a1a10 0%, #070a12 60%); }
+  main { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vw; }
+  h1 { font-size: 4.6vw; margin: 0; background: linear-gradient(180deg, #fff, var(--accent2) 60%, var(--accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--dim); font-size: 1.6vw; margin-top: -1.5vw; }
+  .grid { display: grid; grid-template-columns: repeat(4, 19vw); gap: 1.6vw; }
+  .tile { all: unset; cursor: pointer; background: var(--panel); border: 2px solid var(--line); border-radius: 1.6vw; padding: 2vw 1.4vw;
+    text-align: center; transition: transform .15s, border-color .15s, box-shadow .15s; }
+  .tile .ic { font-size: 6vw; line-height: 1.2; display: block; }
+  .tile b { display: block; font-size: 2vw; margin: .6vw 0 .4vw; }
+  .tile span { color: var(--dim); font-size: 1.15vw; display: block; min-height: 3vw; }
+  .tile:focus, .tile.sel { border-color: var(--accent2); transform: translateY(-.6vw) scale(1.04); box-shadow: 0 1vw 3vw rgba(255,122,47,.35); }
+  .foot { color: var(--dim); font-size: 1.3vw; text-align: center; }
+  .foot code { color: var(--text); background: rgba(255,255,255,.08); padding: .2vw .6vw; border-radius: 6px; }
+</style>
+</head>
+<body data-game="hub">
+  <main>
+    <h1>Motion Games</h1>
+    <div class="sub">Pick a game on your phone, or here with the remote</div>
+    <div class="grid" id="grid"></div>
+    <div class="foot">◀ ▶ choose · OK play · Back returns here<br>Phone: open the app, or <code>/camera</code> · <code>/controller</code></div>
+  </main>
+  <div id="status" class="panel hud bl"><i></i><span id="statusTxt">Waiting for phone…</span></div>
+<script src="hub.js"></script>
+</body>
+</html>

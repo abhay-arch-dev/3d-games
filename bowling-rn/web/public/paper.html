@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper Toss</title>
+<link rel="stylesheet" href="tv.css">
+<style>
+  #wind { left: 50%; top: 3vh; transform: translateX(-50%); text-align: center; min-width: 16vw; }
+  #wind .arrow { font-size: 3vw; line-height: 1; display: block; transition: transform .4s; }
+  #shots { display: flex; gap: .5vw; margin-top: .5vw; }
+  #shots i { width: 1.1vw; height: 1.1vw; border-radius: 50%; background: rgba(255,255,255,.15); display: inline-block; }
+  #shots i.in { background: var(--ok); } #shots i.out { background: var(--bad); } #shots i.cur { outline: 2px solid var(--accent2); }
+  #power { width: 12vw; height: .7vw; background: rgba(255,255,255,.12); border-radius: 99px; overflow: hidden; margin-top: .4vw; }
+  #power div { height: 100%; width: 50%; background: linear-gradient(90deg, var(--ok), var(--accent2), var(--bad)); }
+</style>
+</head>
+<body data-game="paper">
+  <div id="stage"></div>
+  <div class="panel hud tl"><small>Score</small><b id="score">0</b><div id="shots"></div></div>
+  <div class="panel hud tr"><small>Best streak</small><b id="best">0</b><small id="streak">Streak 0</small></div>
+  <div class="panel hud" id="wind"><small>Wind</small><span class="arrow" id="windArrow">➜</span><span id="windTxt">calm</span></div>
+  <div class="panel hud br"><small>Distance</small><b id="dist">–</b><small>Remote: ◀ ▶ aim · ▲ ▼ power</small><div id="power"><div id="powerBar"></div></div></div>
+  <div id="status" class="panel hud bl"><i></i><span id="statusTxt">Waiting for phone…</span></div>
+  <div id="msg"></div>
+  <div class="overlay" id="overlay"><div class="card">
+    <h1>🗑️ Paper Toss</h1>
+    <p>Get the paper ball in the bin. 10 shots. The bin moves further away each time you score.</p>
+    <p><b>Camera:</b> step to aim, swing your arm up to throw · <b>Phone:</b> swing or swipe up · <b>Remote:</b> ▲▼ power, OK throw</p>
+    <p>Watch the <b>wind</b> arrow at the top. It pushes the ball sideways.</p>
+    <button class="btn" id="startBtn">Press OK to start</button>
+  </div></div>
+  <div class="back">Back: all games</div>
+<script src="paper.js"></script>
+</body>
+</html>

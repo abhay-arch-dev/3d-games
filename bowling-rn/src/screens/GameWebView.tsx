@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { BackHandler, PermissionsAndroid, Platform, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import type { Mode } from '../../App';
+import type { Pick } from '../../App';
 import { PORT } from '../server/GameServer';
 
-interface Props { mode: Mode; onExit: () => void }
+interface Props { pick: Pick; onExit: () => void }
 
 /** Shows the camera or controller page served by the in-app server. */
-export default function GameWebView({ mode, onExit }: Props): React.JSX.Element {
+export default function GameWebView({ pick, onExit }: Props): React.JSX.Element {
+  const { mode, game } = pick;
   const [allowed, setAllowed] = useState(mode !== 'camera' || Platform.OS !== 'android');
 
   useEffect(() => {
@@ -27,8 +28,8 @@ export default function GameWebView({ mode, onExit }: Props): React.JSX.Element 
     return <View style={styles.wait}><Text style={styles.waitText}>Waiting for camera permission…</Text></View>;
   }
 
-  // ?app=1 makes the camera page start straight away (permission is already granted).
-  const uri = `http://localhost:${PORT}/${mode}${mode === 'camera' ? '?app=1' : ''}`;
+  // ?game= tells the TV which game to open. ?app=1 makes the camera page start straight away (permission is already granted).
+  const uri = `http://localhost:${PORT}/${mode}?game=${game}${mode === 'camera' ? '&app=1' : ''}`;
   return (
     <WebView
       source={{ uri }}

@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   await mkdir(path.join(DIST, 'lib', 'mediapipe', 'wasm'), { recursive: true });
 
   await build({
-    entryPoints: ['game', 'camera', 'controller'].map((n) => path.join(ROOT, 'web', 'src', `${n}.ts`)),
+    entryPoints: ['game', 'camera', 'controller', 'hub', 'paper', 'runner', 'dance'].map((n) => path.join(ROOT, 'web', 'src', `${n}.ts`)),
     outdir: DIST,
     bundle: true,
     format: 'iife',

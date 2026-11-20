@@ -1,6 +1,6 @@
 // Motion mode: the phone in your hand is the ball (gyro swing), or swipe on the pad.
 import { connect, $, clamp } from './net';
-import type { ControllerToTv, ServerMessage, TvToController } from './protocol';
+import { GAMES, type ControllerToTv, type Dir, type GameId, type ServerMessage, type TvToController } from './protocol';
 
 const pad = $('pad');
 
@@ -27,6 +27,8 @@ let canThrow = false;
 let holding = false;
 let sensorsOk = false;
 let position = 0; // -1..1
+let players = 1;
+let game: GameId = 'bowling';
 const samples: Sample[] = []; // rotation rates in deg/s
 let swipePts: SwipePt[] = [];
 let wakeLock: WakeLockLike = null;
@@ -42,6 +44,12 @@ const net = connect<TvToController, ControllerToTv>('controller', onMessage, (on
 
 function onMessage(msg: TvToController | ServerMessage): void {
   switch (msg.type) {
+    case 'game':
+      game = msg.game;
+      document.body.dataset.game = game;
+      $('gameName').textContent = game === 'hub' ? 'Pick a game on the TV' : `${GAMES[game].icon} ${GAMES[game].name}`;
+      updatePad();
+      break;
     case 'peers':
       tvCount = msg.tv;
       $('dTv').classList.toggle('on', tvCount > 0);
@@ -49,8 +57,12 @@ function onMessage(msg: TvToController | ServerMessage): void {
       break;
     case 'state':
       canThrow = !!msg.canThrow;
-      $('total').textContent = String(msg.total);
-      $('frameLbl').textContent = msg.over ? 'Game over' : `Frame ${msg.frame} · Ball ${msg.roll}`;
+      players = msg.players === 2 ? 2 : 1;
+      markPlayers();
+      $('total').textContent = players === 2 ? (msg.totals ?? []).join(' – ') : String(msg.total);
+      $('frameLbl').textContent = msg.over ? 'Game over'
+        : game === 'paper' ? `Shot ${msg.frame} of 10`
+        : `${players === 2 ? `Player ${msg.player} · ` : ''}Frame ${msg.frame} · Ball ${msg.roll}`;
       updatePad();
       break;
     case 'result':
@@ -69,6 +81,15 @@ function onMessage(msg: TvToController | ServerMessage): void {
 }
 
 function updatePad(): void {
+  if (game === 'runner' || game === 'dance' || game === 'hub') {
+    pad.classList.toggle('disabled', tvCount === 0 || game !== 'runner');
+    $('hint').textContent = tvCount === 0 ? 'Waiting for the TV.'
+      : game === 'runner' ? 'Swipe left/right to change lane, up to jump, down to duck. Tap to start.'
+      : game === 'dance' ? 'Dance needs Camera mode: go back and pick Camera mode.'
+      : 'Choose a game on the TV with the remote, or go back in the app.';
+    $('padLbl').textContent = game === 'runner' ? 'SWIPE' : '–';
+    return;
+  }
   const ready = tvCount > 0 && canThrow;
   pad.classList.toggle('disabled', !ready);
   if (tvCount === 0) $('hint').textContent = 'Waiting for the TV. Open the TV address shown in the app on the TV browser.';
@@ -200,6 +221,13 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 pad.addEventListener('pointerdown', (e) => {
   void keepAwake();
+  if (game === 'runner') {
+    if (tvCount === 0) return;
+    pad.setPointerCapture(e.pointerId);
+    swipePts = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
+    runnerSwipe = true;
+    return;
+  }
   if (tvCount === 0 || !canThrow) return;
   pad.setPointerCapture(e.pointerId);
   holding = true;
@@ -210,7 +238,26 @@ pad.addEventListener('pointerdown', (e) => {
   updatePad();
 });
 
+let runnerSwipe = false;
+function runnerMove(): void {
+  runnerSwipe = false;
+  const a = swipePts[0], b = swipePts[swipePts.length - 1];
+  setTimeout(() => { swipePts = []; drawTrail(); }, 200);
+  if (!a || !b) return;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const dir: Dir = Math.hypot(dx, dy) < 25 ? 'up' : Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy < 0 ? 'up' : 'down';
+  net.send({ type: 'move', dir });
+  vibrate(15);
+}
 pad.addEventListener('pointermove', (e) => {
+  if (runnerSwipe) {
+    swipePts.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+    drawTrail();
+    // Fire as soon as the swipe is long enough, so it feels instant.
+    const a = swipePts[0];
+    if (Math.hypot(e.clientX - a.x, e.clientY - a.y) > 60) runnerMove();
+    return;
+  }
   if (!holding || mode !== 'swipe') return;
   swipePts.push({ x: e.clientX, y: e.clientY, t: performance.now() });
   drawTrail();
@@ -238,7 +285,7 @@ function endHold(cancelled: boolean): void {
   const hookTxt = th.hook > 0.15 ? ' · hook →' : th.hook < -0.15 ? ' · hook ←' : '';
   $('last').textContent = `Power ${Math.round(th.speed * 100)}%${hookTxt}${th.peak ? ` · swing ${th.peak}°/s` : ''}`;
 }
-pad.addEventListener('pointerup', () => endHold(false));
+pad.addEventListener('pointerup', () => { if (runnerSwipe) runnerMove(); else endHold(false); });
 pad.addEventListener('pointercancel', () => endHold(true));
 
 function swipeThrow(): ThrowResult {
@@ -262,8 +309,17 @@ function swipeThrow(): ThrowResult {
   };
 }
 
-$('newGame').addEventListener('click', () => {
-  if (confirm('Start a new game?')) net.send({ type: 'cmd', action: 'newgame' });
+function markPlayers(): void {
+  for (const b of Array.from($('players').children) as HTMLElement[]) b.classList.toggle('on', Number(b.dataset.n) === players);
+}
+$('players').addEventListener('click', (e) => {
+  const n = Number((e.target as HTMLElement).dataset?.n);
+  if (n !== 1 && n !== 2) return;
+  if (confirm(`Start a new ${n}-player game?`)) net.send({ type: 'cmd', action: 'newgame', players: n });
 });
+$('newGame').addEventListener('click', () => {
+  if (confirm('Start a new game?')) net.send({ type: 'cmd', action: 'newgame', players: players as 1 | 2 });
+});
+markPlayers();
 
 updatePad();

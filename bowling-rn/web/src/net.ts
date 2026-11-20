@@ -1,5 +1,9 @@
 // Shared WebSocket helper with auto-reconnect.
-import type { Role, ServerMessage } from './protocol';
+import { gameUrl, type GameId, type Role, type ServerMessage } from './protocol';
+
+/** Game named in the page URL (?game=runner) or on <body data-game>. */
+export const pageGame = (): GameId | null =>
+  (new URLSearchParams(location.search).get('game') || document.body?.dataset.game || null) as GameId | null;
 
 export interface Connection<Out> {
   send(obj: Out): void;
@@ -20,6 +24,10 @@ export function connect<In, Out>(
     ws = sock;
     sock.onopen = () => {
       retry = 500;
+      // Phones tell the TV which game to show; TVs announce which game they are showing.
+      const g = pageGame();
+      if (g && role === 'controller') sock.send(JSON.stringify({ type: 'launch', game: g }));
+      if (g && role === 'tv') sock.send(JSON.stringify({ type: 'game', game: g }));
       onStatus(true);
     };
     sock.onclose = () => {
@@ -34,6 +42,13 @@ export function connect<In, Out>(
         msg = JSON.parse(e.data);
       } catch {
         return;
+      }
+      const m = msg as { type?: string; game?: GameId };
+      if (role === 'tv') {
+        // A phone picked a game: switch the TV to it.
+        if (m.type === 'launch' && m.game && m.game !== pageGame()) { location.href = gameUrl(m.game); return; }
+        // A new phone joined: tell it which game is on.
+        if (m.type === 'peers' && pageGame()) sock.send(JSON.stringify({ type: 'game', game: pageGame() }));
       }
       onMessage(msg);
     };
@@ -57,3 +72,13 @@ export const $ = <T extends HTMLElement = HTMLElement>(id: string): T => {
 };
 
 export const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
+
+/** TV pages: Back / Escape on the remote returns to the game picker. */
+export function enableBackToHub(): void {
+  addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'GoBack' || e.key === 'BrowserBack') {
+      e.preventDefault();
+      location.href = '/tv';
+    }
+  });
+}

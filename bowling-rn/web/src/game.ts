@@ -1,6 +1,6 @@
 // TV game: 3D bowling alley (three.js), simple custom physics, scoring and HUD.
 import * as THREE from 'three';
-import { connect, $, clamp } from './net';
+import { connect, $, clamp, enableBackToHub } from './net';
 import type { ControllerToTv, ServerMessage, ThrowParams, TvToController } from './protocol';
 
 // ============================================================================
@@ -452,17 +452,26 @@ function runningTotal(frames: FrameScore[]): number {
 // Game state
 // ============================================================================
 type Phase = 'ready' | 'rolling' | 'result' | 'over';
+interface Player { rolls: number[]; frame: number; roll: number; tenthStart: number; done: boolean }
+const newPlayer = (): Player => ({ rolls: [], frame: 0, roll: 0, tenthStart: -1, done: false });
+let numPlayers = params.get('players') === '2' ? 2 : 1;
 const game = {
-  rolls: [] as number[], frame: 0, roll: 0, tenthStart: -1,
+  players: [newPlayer()] as Player[], cur: 0,
   phase: 'ready' as Phase,
   phaseTime: 0, rollTime: 0, standingBefore: 10, settleAt: 0,
   position: 0, targetPos: 0, holding: false,
   lastKmh: null as number | null,
-  pending: { resetRack: false, over: false },
+  pending: { resetRack: false, over: false, next: 0 },
 };
 
-function newGame(): void {
-  game.rolls = []; game.frame = 0; game.roll = 0; game.tenthStart = -1;
+/** The player whose turn it is. */
+const P = (): Player => game.players[game.cur];
+
+function newGame(players: number = numPlayers): void {
+  numPlayers = players === 2 ? 2 : 1;
+  game.players = Array.from({ length: numPlayers }, newPlayer);
+  game.cur = 0;
+  document.body.classList.toggle('two', numPlayers === 2);
   $('remote').textContent = 'Remote: ◀ ▶ move · OK throw';
   pins.forEach((p) => placePin(p, true));
   resetBall();
@@ -484,12 +493,15 @@ function setPhase(ph: Phase): void {
 }
 
 function sendState(): void {
-  const frames = scoreFrames(game.rolls);
+  const p = P();
   net.send({
     type: 'state',
-    frame: Math.min(game.frame + 1, 10),
-    roll: game.roll + 1,
-    total: runningTotal(frames),
+    frame: Math.min(p.frame + 1, 10),
+    roll: p.roll + 1,
+    total: runningTotal(scoreFrames(p.rolls)),
+    player: game.cur + 1,
+    players: numPlayers,
+    totals: game.players.map((q) => runningTotal(scoreFrames(q.rolls))),
     canThrow: game.phase === 'ready',
     over: game.phase === 'over',
   });
@@ -518,45 +530,61 @@ function finishRoll(): void {
   const standing = pins.filter(isStanding).length;
   const knocked = game.standingBefore - standing;
   const rackWasFull = game.standingBefore === 10;
-  game.rolls.push(knocked);
+  const p = P();
+  p.rolls.push(knocked);
 
   let kind: 'strike' | 'spare' | 'normal' = 'normal';
   let label: string;
-  if (standing === 0 && rackWasFull && (game.frame < 9 ? game.roll === 0 : true)) { kind = 'strike'; label = 'STRIKE!'; }
+  if (standing === 0 && rackWasFull && (p.frame < 9 ? p.roll === 0 : true)) { kind = 'strike'; label = 'STRIKE!'; }
   else if (standing === 0) { kind = 'spare'; label = 'SPARE!'; }
   else if (knocked === 0) label = ball.gutter ? 'Gutter ball' : 'Missed';
   else label = knocked === 1 ? '1 pin' : `${knocked} pins`;
 
-  let resetRack = false, over = false;
-  if (game.frame < 9) {
-    if (game.roll === 0 && standing > 0) game.roll = 1;
-    else { game.frame++; game.roll = 0; resetRack = true; }
-    if (game.frame === 9 && game.roll === 0) game.tenthStart = game.rolls.length;
+  let resetRack = false, turnOver = false;
+  if (p.frame < 9) {
+    if (p.roll === 0 && standing > 0) p.roll = 1;
+    else { p.frame++; p.roll = 0; resetRack = true; turnOver = true; }
+    if (p.frame === 9 && p.roll === 0) p.tenthStart = p.rolls.length;
   } else {
-    const t = game.rolls.slice(game.tenthStart);
+    const t = p.rolls.slice(p.tenthStart);
     if (standing === 0) resetRack = true;
-    game.roll++;
-    if (game.roll === 2 && t[0] + t[1] < 10) over = true;
-    if (game.roll === 3) over = true;
+    p.roll++;
+    if ((p.roll === 2 && t[0] + t[1] < 10) || p.roll === 3) { p.done = true; turnOver = true; }
   }
+  // Hand the lane to the next player who still has frames left.
+  let next = game.cur;
+  if (turnOver) {
+    for (let k = 1; k <= numPlayers; k++) {
+      const i = (game.cur + k) % numPlayers;
+      if (!game.players[i].done) { next = i; break; }
+    }
+    if (next !== game.cur) resetRack = true;
+  }
+  const over = game.players.every((q) => q.done);
 
   renderBoard();
   showMsg(label, kind === 'normal');
   net.send({ type: 'result', label, kind, knocked });
-  game.pending = { resetRack, over };
+  game.pending = { resetRack, over, next };
   setPhase('result');
 }
 
 function afterResult(): void {
-  const { resetRack, over } = game.pending;
+  const { resetRack, over, next } = game.pending;
   if (over) {
-    const total = runningTotal(scoreFrames(game.rolls));
-    showMsg(`Final score ${total}`, true, true);
+    const totals = game.players.map((q) => runningTotal(scoreFrames(q.rolls)));
+    if (numPlayers === 1) showMsg(`Final score ${totals[0]}`, true, true);
+    else if (totals[0] === totals[1]) showMsg(`Tie game! ${totals[0]}–${totals[1]}`, true, true);
+    else showMsg(`Player ${totals[0] > totals[1] ? 1 : 2} wins! ${totals[0]}–${totals[1]}`, true, true);
     $('remote').textContent = 'New game: raise both hands, or press OK';
     setPhase('over');
     return;
   }
-  hideMsg();
+  const switched = next !== game.cur;
+  game.cur = next;
+  renderBoard();
+  if (switched) showMsg(`Player ${next + 1}'s turn`, true);
+  else hideMsg();
   if (resetRack) pins.forEach((p) => placePin(p, true));
   else pins.forEach((p) => {
     if (!isStanding(p)) { p.out = true; p.mesh.visible = false; }
@@ -729,11 +757,15 @@ function updateCamera(dt: number): void {
 // HUD
 // ============================================================================
 function renderBoard(): void {
-  const frames = scoreFrames(game.rolls);
-  const cur = game.phase === 'over' ? -1 : game.frame;
-  $('board').innerHTML = frames.map((f, i) => {
-    const boxes = f.marks.map((m) => `<span class="${m === 'X' || m === '/' ? 'x' : ''}">${m}</span>`).join('');
-    return `<div class="fr${i === cur ? ' cur' : ''}"><div class="n">${i + 1}</div><div class="m">${boxes}</div><div class="t">${f.total ?? ''}</div></div>`;
+  $('board').innerHTML = game.players.map((pl, pi) => {
+    const active = game.phase !== 'over' && pi === game.cur;
+    const cur = active ? pl.frame : -1;
+    const cells = scoreFrames(pl.rolls).map((f, i) => {
+      const boxes = f.marks.map((m) => `<span class="${m === 'X' || m === '/' ? 'x' : ''}">${m}</span>`).join('');
+      return `<div class="fr${i === cur ? ' cur' : ''}"><div class="n">${i + 1}</div><div class="m">${boxes}</div><div class="t">${f.total ?? ''}</div></div>`;
+    }).join('');
+    const tag = numPlayers > 1 ? `<div class="pl${active ? ' on' : ''}">P${pi + 1}</div>` : '';
+    return `<div class="prow">${tag}${cells}</div>`;
   }).join('');
 }
 
@@ -762,6 +794,14 @@ function hideOverlay(withSound: boolean): void {
   }
 }
 $('startBtn').addEventListener('click', () => hideOverlay(true));
+function markPlayers(): void {
+  for (const b of Array.from($('pick').children) as HTMLElement[]) b.classList.toggle('on', Number(b.dataset.n) === numPlayers);
+}
+$('pick').addEventListener('click', (e) => {
+  const n = Number((e.target as HTMLElement).dataset?.n);
+  if (n) { newGame(n); markPlayers(); }
+});
+markPlayers();
 $('startBtn').focus();
 
 // ============================================================================
@@ -789,7 +829,7 @@ const net = connect<ControllerToTv, TvToController>('tv', (msg: ControllerToTv |
       break;
     case 'cmd':
       // Gesture-triggered "new game" (both hands up) only works once the game is over.
-      if (msg.action === 'newgame' && (!msg.soft || game.phase === 'over')) newGame();
+      if (msg.action === 'newgame' && (!msg.soft || game.phase === 'over')) newGame(msg.players);
       break;
     case 'pose':
       drawPose(msg);
@@ -840,9 +880,13 @@ setInterval(() => {
 }, 500);
 
 // TV remote / keyboard: D-pad moves, OK throws. Lets you play (or test) without the phone.
+enableBackToHub();
 addEventListener('keydown', (e: KeyboardEvent) => {
   if (overlayOpen) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hideOverlay(true); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      newGame(numPlayers === 1 ? 2 : 1); markPlayers();
+    }
     return;
   }
   if (e.key === 'ArrowLeft') game.targetPos = clamp(game.targetPos - 0.1, -1, 1);
@@ -852,6 +896,7 @@ addEventListener('keydown', (e: KeyboardEvent) => {
     if (game.phase === 'over') newGame();
     else throwBall({ speed: 0.55, hook: 0, angle: 0, x: game.targetPos });
   } else if (e.key === 'n' || e.key === 'N') newGame();
+  else if (e.key === '1' || e.key === '2') newGame(Number(e.key));
 });
 
 // ============================================================================
